@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motor Insurance — Underwriting Declarations</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f2247" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="InsureApp" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              50:  '#eef2f9',
+              100: '#d6e0f2',
+              200: '#adc1e5',
+              300: '#7a9bd1',
+              400: '#4d78bb',
+              500: '#2a5aa3',
+              600: '#1e4382',
+              700: '#163163',
+              800: '#0f2247',
+              900: '#091630',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter','system-ui','sans-serif'],
+            mono: ['JetBrains Mono','Menlo','monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+  <style>
+    [x-cloak] { display: none !important; }
+    .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .toast-enter { animation: slideUp .3s ease; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .spinner { animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .fade-in { animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    input:focus, select:focus, textarea:focus { outline: none; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .modal-overlay { animation: overlayIn .2s ease; }
+    @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
+    .modal-panel { animation: panelIn .25s ease; }
+    @keyframes panelIn { from { opacity:0; transform:scale(.97) translateY(-8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  </style>
+</head>
+<body class="h-full bg-slate-50 font-sans text-slate-800 antialiased">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════════════ -->
+<div id="app" class="min-h-screen flex flex-col">
+
+  <!-- TOP NAV -->
+  <header class="bg-navy-800 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-navy-600 flex items-center justify-center">
+            <i class="ti ti-shield-check text-xl"></i>
+          </div>
+          <div>
+            <p class="text-base font-semibold leading-tight">Motor Insurance</p>
+            <p class="text-xs text-navy-300 leading-tight">Underwriting Management</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="health-badge" class="hidden sm:flex items-center gap-1.5 text-xs bg-navy-700 px-3 py-1.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span class="text-navy-200">API Online</span>
+          </span>
+          <button onclick="openModal()" class="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 transition-colors text-white text-sm font-medium px-4 py-2 rounded-lg">
+            <i class="ti ti-plus text-base"></i>
+            <span class="hidden sm:inline">New Declaration</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- STATS ROW -->
+    <div id="stats-row" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
+        <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+          <i class="ti ti-files text-xl text-blue-600"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Total Declarations</p>
+          <p class="text-2xl font-bold text-slate-800" id="stat-total">—</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+          <i class="ti ti-currency-dollar text-xl text-emerald-600"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Total IDV (AED)</p>
+          <p class="text-2xl font-bold text-slate-800" id="stat-idv">—</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+          <i class="ti ti-chart-bar text-xl text-violet-600"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Average IDV</p>
+          <p class="text-2xl font-bold text-slate-800" id="stat-avg">—</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
+        <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+          <i class="ti ti-calendar-week text-xl text-amber-600"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Added This Week</p>
+          <p class="text-2xl font-bold text-slate-800" id="stat-week">—</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="bg-white rounded-xl border border-slate-200 px-4 py-3 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+      <div class="relative flex-1 max-w-sm">
+        <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+        <input id="search-input" type="text" placeholder="Search by model, VIN, signatory…"
+          class="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+      </div>
+      <div class="flex items-center gap-2">
+        <select id="status-filter" class="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+          <option value="active">Active</option>
+          <option value="voided">Voided</option>
+        </select>
+        <button onclick="loadDeclarations()" class="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-500" title="Refresh">
+          <i class="ti ti-refresh text-base"></i>
+        </button>
+        <span class="text-xs text-slate-400 hidden sm:inline" id="record-count"></span>
+      </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Vehicle</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Chassis / VIN</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Engine No.</th>
+              <th class="text-right px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">IDV</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Signatory</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden xl:table-cell">Issued</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+              <th class="px-5 py-3.5"></th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="divide-y divide-slate-100">
+            <tr><td colspan="8" class="px-5 py-12 text-center text-slate-400 text-sm">
+              <i class="ti ti-loader-2 spinner text-2xl text-blue-400 block mx-auto mb-2"></i>Loading…
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div id="pagination" class="hidden border-t border-slate-100 px-5 py-3 flex items-center justify-between">
+        <span class="text-xs text-slate-500" id="page-info"></span>
+        <div class="flex gap-1">
+          <button id="btn-prev" onclick="changePage(-1)" class="px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            <i class="ti ti-chevron-left"></i> Prev
+          </button>
+          <button id="btn-next" onclick="changePage(1)" class="px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            Next <i class="ti ti-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CREATE / EDIT MODAL
+════════════════════════════════════════════════════════════════ -->
+<div id="modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+  <div class="modal-overlay fixed inset-0 bg-navy-900/60" onclick="closeModal()"></div>
+  <div class="relative min-h-screen flex items-start sm:items-center justify-center p-4">
+    <div class="modal-panel relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl">
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-navy-800 flex items-center justify-center">
+            <i class="ti ti-shield-check text-white text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-slate-800" id="modal-title">New Declaration</h2>
+            <p class="text-xs text-slate-500">Underwriting Value Agreement</p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+          <i class="ti ti-x text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form id="decl-form" class="px-6 py-5 space-y-5" novalidate>
+        <input type="hidden" id="edit-id" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+          <!-- Make & Model -->
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-car text-navy-600 mr-1"></i>Make &amp; Model <span class="text-red-500">*</span>
+            </label>
+            <input id="f-make_model" type="text" placeholder="e.g. TOYOTA RUSH"
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition uppercase placeholder:normal-case" />
+            <p class="error-msg hidden text-xs text-red-500 mt-1" id="err-make_model"></p>
+          </div>
+
+          <!-- Year -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-calendar-event text-navy-600 mr-1"></i>Year of Manufacture <span class="text-red-500">*</span>
+            </label>
+            <input id="f-year" type="number" placeholder="2019" min="1900" max="2026"
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            <p class="error-msg hidden text-xs text-red-500 mt-1" id="err-year"></p>
+          </div>
+
+          <!-- Currency + IDV -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-currency-dollar text-navy-600 mr-1"></i>Agreed / Insured Declared Value <span class="text-red-500">*</span>
+            </label>
+            <div class="flex gap-2">
+              <select id="f-currency" class="w-20 px-2.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white font-mono font-medium">
+                <option value="AED">AED</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="SAR">SAR</option>
+              </select>
+              <input id="f-idv" type="number" placeholder="37,500" min="1" step="0.01"
+                class="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition font-mono" />
+            </div>
+            <p class="error-msg hidden text-xs text-red-500 mt-1" id="err-idv"></p>
+          </div>
+
+          <!-- Chassis / VIN -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-barcode text-navy-600 mr-1"></i>Chassis / VIN Number <span class="text-red-500">*</span>
+            </label>
+            <input id="f-chassis_vin" type="text" placeholder="MHKEF8BKK003049"
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition uppercase placeholder:normal-case" />
+            <p class="error-msg hidden text-xs text-red-500 mt-1" id="err-chassis_vin"></p>
+          </div>
+
+          <!-- Engine Number -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-engine text-navy-600 mr-1"></i>Engine Number <span class="text-red-500">*</span>
+            </label>
+            <input id="f-engine_no" type="text" placeholder="2NRF752340"
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition uppercase placeholder:normal-case" />
+            <p class="error-msg hidden text-xs text-red-500 mt-1" id="err-engine_no"></p>
+          </div>
+
+          <!-- Signatory -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-user-check text-navy-600 mr-1"></i>Authorized Signatory <span class="text-red-500">*</span>
+            </label>
+            <input id="f-signatory" type="text" placeholder="Full name"
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            <p class="error-msg hidden text-xs text-red-500 mt-1" id="err-signatory"></p>
+          </div>
+
+          <!-- Company -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-building text-navy-600 mr-1"></i>Company Name
+            </label>
+            <input id="f-company" type="text" placeholder="Raja Tahir Motors FZCO" value="Raja Tahir Motors FZCO"
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+          </div>
+
+          <!-- Date -->
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+              <i class="ti ti-calendar text-navy-600 mr-1"></i>Declaration Date <span class="text-red-500">*</span>
+            </label>
+            <input id="f-issued_date" type="date"
+              class="w-full sm:w-64 px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            <p class="error-msg hidden text-xs text-red-500 mt-1" id="err-issued_date"></p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+          <p class="text-xs text-slate-400"><span class="text-red-400">*</span> Required fields</p>
+          <div class="flex gap-3">
+            <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+            <button type="submit" id="submit-btn"
+              class="flex items-center gap-2 px-6 py-2.5 bg-navy-800 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60">
+              <span id="submit-label">Save Declaration</span>
+              <i class="ti ti-loader-2 spinner hidden" id="submit-spinner"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DETAIL DRAWER (side panel)
+════════════════════════════════════════════════════════════════ -->
+<div id="drawer" class="hidden fixed inset-0 z-50">
+  <div class="fixed inset-0 bg-navy-900/40" onclick="closeDrawer()"></div>
+  <div class="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col fade-in">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-navy-800 text-white">
+      <div class="flex items-center gap-2">
+        <i class="ti ti-file-text text-lg"></i>
+        <h3 class="font-semibold">Declaration Detail</h3>
+      </div>
+      <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg flex items-center justify-center text-navy-300 hover:text-white hover:bg-navy-700 transition">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div id="drawer-body" class="flex-1 overflow-y-auto p-6 space-y-5"></div>
+    <div id="drawer-footer" class="px-6 py-4 border-t border-slate-100 flex gap-3"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TOAST CONTAINER
+════════════════════════════════════════════════════════════════ -->
+<div id="toast-container" class="fixed bottom-6 right-6 z-[60] flex flex-col gap-2 items-end"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════ -->
+<script>
+const API = '/api/declarations';
+let state = { page: 1, limit: 10, search: '', status: 'active', total: 0, pages: 0 };
+let searchTimer;
+
+// ─── Toast ────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  const colors = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-blue-600', warn: 'bg-amber-500' };
+  el.className = `toast-enter flex items-center gap-2.5 px-4 py-3 rounded-xl text-white text-sm shadow-lg max-w-xs ${colors[type] || colors.info}`;
+  const icons = { success: 'ti-circle-check', error: 'ti-alert-circle', info: 'ti-info-circle', warn: 'ti-alert-triangle' };
+  el.innerHTML = `<i class="ti ${icons[type] || icons.info} text-base flex-shrink-0"></i><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(() => el.remove(), 350); }, 3500);
+}
+
+// ─── API helpers ──────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+  try {
+    const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+    const json = await r.json();
+    if (!r.ok) throw new Error(json.message || 'Request failed');
+    return json;
+  } catch (e) {
+    throw e;
+  }
+}
+
+// ─── Stats ────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const { data } = await apiFetch(`${API}/stats/summary`);
+    document.getElementById('stat-total').textContent = data.total.toLocaleString();
+    document.getElementById('stat-idv').textContent   = formatIDV(data.totalIDV, 'AED');
+    document.getElementById('stat-avg').textContent   = formatIDV(data.avgIDV, 'AED');
+    document.getElementById('stat-week').textContent  = data.recentThisWeek;
+  } catch { /* silent */ }
+}
+
+function formatIDV(v, cur) {
+  if (v >= 1e6) return `${(v/1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `${(v/1e3).toFixed(0)}K`;
+  return v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// ─── Declarations list ────────────────────────────────────────
+async function loadDeclarations() {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = `<tr><td colspan="8" class="px-5 py-12 text-center text-slate-400">
+    <i class="ti ti-loader-2 spinner text-2xl text-blue-400 block mx-auto mb-2"></i>Loading…</td></tr>`;
+
+  const params = new URLSearchParams({ page: state.page, limit: state.limit, status: state.status });
+  if (state.search) params.set('search', state.search);
+
+  try {
+    const res = await apiFetch(`${API}?${params}`);
+    const { data, meta } = res;
+    state.total = meta.total; state.pages = meta.pages;
+
+    document.getElementById('record-count').textContent = `${meta.total} record${meta.total !== 1 ? 's' : ''}`;
+    document.getElementById('page-info').textContent = `Page ${meta.page} of ${meta.pages || 1} · ${meta.total} total`;
+
+    const pag = document.getElementById('pagination');
+    if (meta.pages > 1) {
+      pag.classList.remove('hidden');
+      document.getElementById('btn-prev').disabled = meta.page <= 1;
+      document.getElementById('btn-next').disabled = meta.page >= meta.pages;
+    } else { pag.classList.add('hidden'); }
+
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="8" class="px-5 py-16 text-center">
+        <i class="ti ti-file-off text-4xl text-slate-300 block mb-3"></i>
+        <p class="text-slate-400 text-sm">No declarations found</p>
+        <p class="text-slate-300 text-xs mt-1">Try adjusting your search or add a new declaration</p>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(d => `
+      <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="openDrawer('${d.id}')">
+        <td class="px-5 py-4">
+          <div class="font-semibold text-slate-800 text-sm">${esc(d.make_model)}</div>
+          <div class="text-xs text-slate-400 mt-0.5">${d.year}</div>
+        </td>
+        <td class="px-5 py-4 hidden md:table-cell">
+          <span class="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">${esc(d.chassis_vin)}</span>
+        </td>
+        <td class="px-5 py-4 hidden lg:table-cell">
+          <span class="font-mono text-xs text-slate-500">${esc(d.engine_no)}</span>
+        </td>
+        <td class="px-5 py-4 text-right">
+          <span class="font-semibold text-slate-800 text-sm">${d.currency} ${Number(d.idv).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+        </td>
+        <td class="px-5 py-4 hidden sm:table-cell">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-navy-100 text-navy-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+              ${esc(d.signatory).slice(0,2).toUpperCase()}
+            </div>
+            <span class="text-sm text-slate-700 truncate max-w-[120px]">${esc(d.signatory)}</span>
+          </div>
+        </td>
+        <td class="px-5 py-4 hidden xl:table-cell">
+          <span class="text-xs text-slate-500">${fmtDate(d.issued_date)}</span>
+        </td>
+        <td class="px-5 py-4">
+          ${d.status === 'active'
+            ? '<span class="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full font-medium"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>Active</span>'
+            : '<span class="inline-flex items-center gap-1 text-xs bg-slate-100 text-slate-500 border border-slate-200 px-2.5 py-1 rounded-full font-medium"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block"></span>Voided</span>'}
+        </td>
+        <td class="px-5 py-4">
+          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition" onclick="event.stopPropagation()">
+            <button onclick="editDeclaration('${d.id}')" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition" title="Edit">
+              <i class="ti ti-edit text-sm"></i>
+            </button>
+            ${d.status === 'active' ? `<button onclick="voidDeclaration('${d.id}')" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition" title="Void">
+              <i class="ti ti-trash text-sm"></i>
+            </button>` : ''}
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="8" class="px-5 py-12 text-center text-red-400 text-sm">
+      <i class="ti ti-alert-circle text-2xl block mx-auto mb-2"></i>${esc(e.message)}</td></tr>`;
+  }
+}
+
+// ─── Modal ────────────────────────────────────────────────────
+function openModal(prefill = {}) {
+  clearErrors();
+  document.getElementById('edit-id').value = '';
+  document.getElementById('modal-title').textContent = 'New Declaration';
+  document.getElementById('submit-label').textContent = 'Save Declaration';
+
+  const today = new Date().toISOString().split('T')[0];
+  setField('make_model', prefill.make_model || '');
+  setField('year', prefill.year || '');
+  setField('chassis_vin', prefill.chassis_vin || '');
+  setField('engine_no', prefill.engine_no || '');
+  setField('idv', prefill.idv || '');
+  setField('currency', prefill.currency || 'AED');
+  setField('signatory', prefill.signatory || '');
+  setField('company', prefill.company || 'Raja Tahir Motors FZCO');
+  setField('issued_date', prefill.issued_date ? prefill.issued_date.split('T')[0] : today);
+
+  document.getElementById('modal').classList.remove('hidden');
+  document.getElementById('f-make_model').focus();
+}
+
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+function setField(id, val) {
+  const el = document.getElementById('f-' + id);
+  if (el) { el.tagName === 'SELECT' ? (el.value = val) : (el.value = val); }
+}
+
+function clearErrors() {
+  document.querySelectorAll('.error-msg').forEach(e => { e.classList.add('hidden'); e.textContent = ''; });
+  document.querySelectorAll('input,select').forEach(e => e.classList.remove('ring-2','ring-red-400','border-red-400'));
+}
+
+function showErrors(errors) {
+  errors.forEach(({ field, msg }) => {
+    const el = document.getElementById(`err-${field}`);
+    const inp = document.getElementById(`f-${field}`);
+    if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+    if (inp) inp.classList.add('border-red-400');
+  });
+}
+
+document.getElementById('decl-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  clearErrors();
+  const btn = document.getElementById('submit-btn');
+  const spin = document.getElementById('submit-spinner');
+  btn.disabled = true; spin.classList.remove('hidden');
+
+  const id = document.getElementById('edit-id').value;
+  const body = {
+    make_model:  document.getElementById('f-make_model').value.trim().toUpperCase(),
+    year:        parseInt(document.getElementById('f-year').value),
+    chassis_vin: document.getElementById('f-chassis_vin').value.trim().toUpperCase(),
+    engine_no:   document.getElementById('f-engine_no').value.trim().toUpperCase(),
+    idv:         parseFloat(document.getElementById('f-idv').value),
+    currency:    document.getElementById('f-currency').value,
+    signatory:   document.getElementById('f-signatory').value.trim(),
+    company:     document.getElementById('f-company').value.trim(),
+    issued_date: document.getElementById('f-issued_date').value,
+  };
+
+  try {
+    if (id) {
+      await apiFetch(`${API}/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+      toast('Declaration updated successfully');
+    } else {
+      await apiFetch(API, { method: 'POST', body: JSON.stringify(body) });
+      toast('Declaration created successfully');
+    }
+    closeModal();
+    loadDeclarations();
+    loadStats();
+  } catch (err) {
+    if (err.errors) showErrors(err.errors);
+    else toast(err.message || 'Something went wrong', 'error');
+  } finally {
+    btn.disabled = false; spin.classList.add('hidden');
+  }
+});
+
+// ─── Edit ─────────────────────────────────────────────────────
+async function editDeclaration(id) {
+  try {
+    const { data } = await apiFetch(`${API}/${id}`);
+    openModal(data);
+    document.getElementById('edit-id').value = id;
+    document.getElementById('modal-title').textContent = 'Edit Declaration';
+    document.getElementById('submit-label').textContent = 'Save Changes';
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── Void ─────────────────────────────────────────────────────
+async function voidDeclaration(id) {
+  if (!confirm('Void this declaration? This action cannot be undone.')) return;
+  try {
+    await apiFetch(`${API}/${id}`, { method: 'DELETE' });
+    toast('Declaration voided', 'warn');
+    loadDeclarations(); loadStats();
+    if (!document.getElementById('drawer').classList.contains('hidden')) closeDrawer();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── Drawer ───────────────────────────────────────────────────
+async function openDrawer(id) {
+  document.getElementById('drawer').classList.remove('hidden');
+  document.getElementById('drawer-body').innerHTML = `<div class="flex items-center justify-center py-16 text-slate-400">
+    <i class="ti ti-loader-2 spinner text-3xl text-blue-400"></i></div>`;
+  document.getElementById('drawer-footer').innerHTML = '';
+  try {
+    const { data: d } = await apiFetch(`${API}/${id}`);
+    document.getElementById('drawer-body').innerHTML = `
+      <div class="bg-navy-800 rounded-2xl p-5 text-white">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-11 h-11 rounded-xl bg-navy-600 flex items-center justify-center"><i class="ti ti-car text-xl"></i></div>
+          <div>
+            <p class="font-bold text-lg leading-tight">${esc(d.make_model)}</p>
+            <p class="text-navy-300 text-sm">${d.year} · ${esc(d.chassis_vin)}</p>
+          </div>
+        </div>
+        <div class="bg-navy-700/50 rounded-xl px-4 py-3 flex items-center justify-between">
+          <span class="text-navy-300 text-xs font-medium uppercase tracking-wide">Insured Value</span>
+          <span class="text-xl font-bold">${d.currency} ${Number(d.idv).toLocaleString('en-US',{minimumFractionDigits:2})}</span>
+        </div>
+      </div>
+      <div class="space-y-3">
+        ${drawerRow('ti-engine','Engine No.',d.engine_no,'mono')}
+        ${drawerRow('ti-user-check','Authorized Signatory',d.signatory)}
+        ${drawerRow('ti-building','Company',d.company)}
+        ${drawerRow('ti-calendar','Issued Date',fmtDate(d.issued_date))}
+        ${drawerRow('ti-clock','Created',new Date(d.created_at).toLocaleString())}
+        ${drawerRow('ti-circle-check','Status',d.status === 'active' ? '✓ Active' : '✗ Voided')}
+        <div class="bg-slate-50 rounded-xl p-4">
+          <p class="text-xs text-slate-400 font-medium uppercase tracking-wide mb-1">Declaration ID</p>
+          <p class="font-mono text-xs text-slate-500 break-all">${d.id}</p>
+        </div>
+      </div>`;
+    document.getElementById('drawer-footer').innerHTML = d.status === 'active' ? `
+      <button onclick="editDeclaration('${d.id}')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-navy-800 text-navy-800 rounded-xl text-sm font-semibold hover:bg-navy-50 transition">
+        <i class="ti ti-edit"></i> Edit
+      </button>
+      <button onclick="voidDeclaration('${d.id}')" class="flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 transition">
+        <i class="ti ti-trash"></i> Void
+      </button>` : `<p class="text-sm text-slate-400 text-center w-full py-1">This declaration has been voided</p>`;
+  } catch (e) { document.getElementById('drawer-body').innerHTML = `<p class="text-red-500 text-sm p-4">${esc(e.message)}</p>`; }
+}
+
+function drawerRow(icon, label, value, style='') {
+  return `<div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+    <i class="ti ${icon} text-navy-500 mt-0.5 text-base flex-shrink-0"></i>
+    <div class="min-w-0">
+      <p class="text-xs text-slate-400 font-medium">${label}</p>
+      <p class="text-sm text-slate-800 font-medium mt-0.5 ${style === 'mono' ? 'font-mono' : ''}">${esc(value)}</p>
+    </div>
+  </div>`;
+}
+
+function closeDrawer() { document.getElementById('drawer').classList.add('hidden'); }
+
+// ─── Pagination & Search ──────────────────────────────────────
+function changePage(dir) {
+  state.page = Math.max(1, Math.min(state.pages, state.page + dir));
+  loadDeclarations();
+}
+
+document.getElementById('search-input').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { state.search = e.target.value; state.page = 1; loadDeclarations(); }, 350);
+});
+
+document.getElementById('status-filter').addEventListener('change', e => {
+  state.status = e.target.value; state.page = 1; loadDeclarations();
+});
+
+// ─── Utilities ────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+// ─── Health check ─────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    await apiFetch('/api/health');
+    document.getElementById('health-badge').classList.remove('hidden');
+  } catch { /* no badge */ }
+}
+
+// ─── Init ─────────────────────────────────────────────────────
+checkHealth();
+loadStats();
+loadDeclarations();
+</script>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PWA INSTALL BANNER
+════════════════════════════════════════════════════════════════ -->
+<div id="install-banner" class="hidden fixed bottom-0 left-0 right-0 z-[70] px-4 pb-4">
+  <div class="max-w-lg mx-auto bg-navy-800 rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center gap-4 px-4 py-4">
+      <div class="w-12 h-12 rounded-xl bg-navy-600 flex items-center justify-center flex-shrink-0">
+        <i class="ti ti-shield-check text-white text-2xl"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-white font-semibold text-sm leading-tight">Install InsureApp</p>
+        <p class="text-navy-300 text-xs mt-0.5">Add to home screen — works offline</p>
+      </div>
+      <button id="btn-install" class="bg-blue-500 hover:bg-blue-400 text-white text-xs font-semibold px-4 py-2 rounded-xl transition flex-shrink-0">Install</button>
+      <button id="btn-dismiss" class="w-7 h-7 flex items-center justify-center text-navy-400 hover:text-white transition flex-shrink-0"><i class="ti ti-x text-base"></i></button>
+    </div>
+    <div id="ios-steps" class="hidden bg-navy-900/50 px-4 py-3 flex items-center gap-3 text-xs text-navy-300">
+      <span><i class="ti ti-share text-sm text-blue-400"></i> Tap Share</span>
+      <i class="ti ti-arrow-right text-xs"></i>
+      <span><i class="ti ti-square-plus text-sm text-blue-400"></i> Add to Home Screen</span>
+      <i class="ti ti-arrow-right text-xs"></i>
+      <span><i class="ti ti-check text-sm text-emerald-400"></i> Add</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Service Worker ────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(r => console.log('SW registered:', r.scope))
+      .catch(e => console.warn('SW failed:', e));
+  });
+}
+
+// ─── PWA Install Prompt ────────────────────────────────────────
+let deferredPrompt = null;
+const banner = document.getElementById('install-banner');
+const btnInstall = document.getElementById('btn-install');
+const btnDismiss = document.getElementById('btn-dismiss');
+
+// Android / Chrome
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!sessionStorage.getItem('pwa-dismissed')) {
+    setTimeout(() => banner.classList.remove('hidden'), 2000);
+  }
+});
+
+btnInstall && btnInstall.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    banner.classList.add('hidden');
+    if (outcome === 'accepted') toast('App installed successfully!', 'success');
+  }
+});
+
+btnDismiss && btnDismiss.addEventListener('click', () => {
+  banner.classList.add('hidden');
+  sessionStorage.setItem('pwa-dismissed', '1');
+});
+
+// iOS Safari — no beforeinstallprompt, show manual steps
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+if (isIOS && !isInStandaloneMode && !sessionStorage.getItem('pwa-dismissed')) {
+  setTimeout(() => {
+    banner.classList.remove('hidden');
+    document.getElementById('ios-steps').classList.remove('hidden');
+    btnInstall.classList.add('hidden');
+  }, 2000);
+}
+
+window.addEventListener('appinstalled', () => {
+  banner.classList.add('hidden');
+  toast('InsureApp installed on your home screen!', 'success');
+});
+</script>
+
+</body>
+</html>

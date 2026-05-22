@@ -1,0 +1,13 @@
+{
+  "name": "motor-insurance-app",
+  "version": "1.0.0",
+  "description": "Motor Insurance Underwriting Declaration Management System",
+  "scripts": {
+    "start": "node --experimental-sqlite backend/server.js",
+    "dev": "node --experimental-sqlite --watch backend/server.js",
+    "install:backend": "cd backend && npm install"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
