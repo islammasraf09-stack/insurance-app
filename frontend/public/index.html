@@ -38,6 +38,7 @@
       },
     };
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
@@ -624,13 +625,18 @@ async function openDrawer(id) {
           <p class="font-mono text-xs text-slate-500 break-all">${d.id}</p>
         </div>
       </div>`;
-    document.getElementById('drawer-footer').innerHTML = d.status === 'active' ? `
+    document.getElementById('drawer-footer').innerHTML = `
+      <button onclick="downloadPDF('${d.id}')" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-navy-800 hover:bg-navy-700 text-white rounded-xl text-sm font-semibold transition">
+        <i class="ti ti-file-download"></i> PDF
+      </button>
+      ${d.status === 'active' ? `
       <button onclick="editDeclaration('${d.id}')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-navy-800 text-navy-800 rounded-xl text-sm font-semibold hover:bg-navy-50 transition">
         <i class="ti ti-edit"></i> Edit
       </button>
       <button onclick="voidDeclaration('${d.id}')" class="flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 transition">
         <i class="ti ti-trash"></i> Void
-      </button>` : `<p class="text-sm text-slate-400 text-center w-full py-1">This declaration has been voided</p>`;
+      </button>` : `<p class="text-sm text-slate-400 py-1">Voided</p>`}
+    `;
   } catch (e) { document.getElementById('drawer-body').innerHTML = `<p class="text-red-500 text-sm p-4">${esc(e.message)}</p>`; }
 }
 
@@ -680,6 +686,84 @@ async function checkHealth() {
 }
 
 // ─── Init ─────────────────────────────────────────────────────
+// ─── PDF Generation ───────────────────────────────────────────
+async function downloadPDF(id) {
+  try {
+    const { data: d } = await apiFetch(`${API}/${id}`);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297, ml = 25, mr = 25, contentW = 160;
+    const issuedFmt = new Date(d.issued_date+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+
+    // Header
+    doc.setFillColor(15,34,71); doc.rect(0,0,pageW,28,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont('helvetica','bold');
+    doc.text('MOTOR INSURANCE', ml, 12);
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text('Underwriting Declaration — Agreed Vehicle Value', ml, 19);
+    doc.text(issuedFmt, pageW-mr, 19, {align:'right'});
+
+    // Subject
+    let y = 40;
+    doc.setTextColor(15,34,71); doc.setFontSize(11); doc.setFont('helvetica','bold');
+    const subL = doc.splitTextToSize('Subject: Confirmation of Agreed Vehicle Value as Stated in Motor Insurance Policy', contentW);
+    doc.text(subL, ml, y); y += subL.length*7+8;
+
+    // Intro
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50);
+    const introL = doc.splitTextToSize(`I, the undersigned representative, representing ${d.company}, hereby write this letter to formally acknowledge and confirm my full agreement with the declared value of insured vehicle as specified in the motor insurance policy issued by your esteemed company.`, contentW);
+    doc.text(introL, ml, y); y += introL.length*6+8;
+
+    // Vehicle box
+    doc.setFillColor(240,244,248); doc.setDrawColor(200,210,225); doc.setLineWidth(0.3);
+    doc.roundedRect(ml,y,contentW,52,3,3,'FD');
+    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(15,34,71);
+    doc.text('VEHICLE DETAILS', ml+6, y+8);
+    let ry = y+16;
+    [['Make & Model',d.make_model],['Year of Manufacture',String(d.year)],['Chassis / VIN Number',d.chassis_vin],['Engine Number',d.engine_no]].forEach(([lbl,val])=>{
+      doc.setFont('helvetica','normal'); doc.setTextColor(100,110,130); doc.setFontSize(8); doc.text(lbl,ml+6,ry);
+      doc.setFont('helvetica','bold'); doc.setTextColor(20,20,20); doc.setFontSize(9); doc.text(val,ml+60,ry);
+      ry+=9;
+    });
+    y+=58;
+
+    // IDV
+    doc.setFillColor(15,34,71); doc.roundedRect(ml,y,contentW,18,3,3,'F');
+    doc.setTextColor(180,200,230); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text('Agreed / Insured Declared Value (IDV)', ml+6, y+7);
+    doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(`${d.currency} ${Number(d.idv).toLocaleString('en-US',{minimumFractionDigits:2})}`, pageW-mr, y+12, {align:'right'});
+    y+=26;
+
+    // Paragraphs
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50);
+    const p1L = doc.splitTextToSize('I hereby confirm that I am fully aware of and in complete agreement with the above-stated Insured Declared Value (IDV) / agreed vehicle value as documented in the policy schedule. I acknowledge that this value was mutually agreed upon at the time of policy issuance.', contentW);
+    doc.text(p1L, ml, y); y+=p1L.length*6+6;
+    const p2L = doc.splitTextToSize('I further confirm that I have no objection or dispute regarding the declared vehicle value and that I understand this agreed value shall serve as the basis for any claim settlement, including total loss or constructive total loss, in accordance with the terms and conditions of the policy.', contentW);
+    doc.text(p2L, ml, y); y+=p2L.length*6+14;
+
+    // Closing
+    doc.text('Thanking you,', ml, y); y+=6;
+    doc.text('Yours faithfully,', ml, y); y+=18;
+    doc.setDrawColor(15,34,71); doc.setLineWidth(0.5); doc.line(ml,y,ml+70,y); y+=5;
+    doc.setFont('helvetica','bold'); doc.setTextColor(15,34,71); doc.setFontSize(10);
+    doc.text(d.signatory, ml, y); y+=5;
+    doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80); doc.setFontSize(9);
+    doc.text('Authorized Signatory', ml, y); y+=5;
+    doc.text(d.company, ml, y); y+=5;
+    doc.text('Date: '+issuedFmt, ml, y);
+
+    // Footer
+    doc.setFillColor(240,244,248); doc.rect(0,pageH-14,pageW,14,'F');
+    doc.setFontSize(7.5); doc.setTextColor(120,130,145); doc.setFont('helvetica','normal');
+    doc.text('Computer-generated declaration. Ref: '+d.id.substring(0,8).toUpperCase(), ml, pageH-6);
+    doc.text(new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}), pageW-mr, pageH-6, {align:'right'});
+
+    doc.save(`Declaration_${d.make_model.replace(/\s+/g,'_')}_${d.chassis_vin}.pdf`);
+    toast('PDF downloaded!', 'success');
+  } catch(e) { toast('PDF error: '+e.message, 'error'); }
+}
+
 checkHealth();
 loadStats();
 loadDeclarations();
